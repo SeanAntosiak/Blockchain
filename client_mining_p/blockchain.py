@@ -116,20 +116,31 @@ print(blockchain.hash(blockchain.last_block))
 def mine():
 
     data = request.get_json()
+    proof = data['proof']
 
-    block = last_block()
+    last_block = blockchain.last_block
+    last_block_str = json.dumps(last_block, sort_keys=True)
 
+    if blockchain.valid_proof(last_block_str, proof):
+        # Forge the new Block by adding it to the chain with the proof
+        previous_hash = blockchain.hash(blockchain.last_block)
+        new_block = blockchain.new_block(proof, previous_hash)
 
-    # Forge the new Block by adding it to the chain with the proof
-    previous_hash = blockchain.hash(blockchain.last_block)
-    new_block = blockchain.new_block(proof, previous_hash)
+        response = {
+            "block": new_block,
+            "message": "new block created"
+        }
 
-    response = {
-        # TODO: Send a JSON response with the new block
-        "block": new_block
-    }
+        return jsonify(response), 200
 
-    return jsonify(response), 200
+    else:
+
+        response = {
+            # TODO: Send a JSON response with the new block
+            "message": "bad proof"
+        }
+
+        return jsonify(response), 200
 
 
 @app.route('/chain', methods=['GET'])
@@ -144,7 +155,10 @@ def full_chain():
 
 @app.route('/last_block', methods=['GET'])
 def get_last_block():
-    return blockchain.last_block
+    response = {
+        'last_block': blockchain.last_block
+    }
+    return jsonify(response), 200
 
 
 # Run the program on port 5000
